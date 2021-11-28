@@ -94,7 +94,13 @@
                 </fileset>
             </path>
         </pathconvert>
-        <property name="bootclasspath.prepend.vanilla" value="${nb_all}/nbbuild/external/vanilla-javac-api.jar${path.separator}${nb_all}/nbbuild/external/vanilla-javac-impl.jar" />
+        <pathconvert property="bootclasspath.prepend.vanilla">
+            <path>
+                <fileset dir="${nb_all}/nbbuild/external/" erroronmissingdir="false">
+                    <include name="nb-javac*.jar"/>
+                </fileset>
+            </path>
+        </pathconvert>
     </target>
     <target name="-init-bootclasspath-prepend-compile" depends="-init-compile-bootclasspath-nb-vanilla">
         <condition property="bootclasspath.prepend" value="${bootclasspath.prepend.nb}">

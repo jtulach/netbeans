@@ -218,13 +218,13 @@ public class TreeFactory {
     }
     
     public CaseTree Case(ExpressionTree expression, List<? extends StatementTree> statements) {
-        ListBuffer<JCStatement> lb = new ListBuffer<JCStatement>();
+        ListBuffer<JCStatement> lb = new ListBuffer<>();
         for (StatementTree t : statements)
             lb.append((JCStatement)t);
         try {
             final TreeMaker at = make.at(NOPOS);
             final com.sun.tools.javac.util.List<JCExpression> exprList = expression == null ? com.sun.tools.javac.util.List.nil() : com.sun.tools.javac.util.List.of((JCExpression)expression);
-            return at.Case(CaseTree.CaseKind.STATEMENT, exprList, lb.toList(), null);
+            return at.Case(CaseTree.CaseKind.STATEMENT, null, lb.toList(), null);
         } catch (NoSuchMethodError err) {
             try {
                 Class<Enum> caseKind = (Class<Enum>) Class.forName("com.sun.source.tree.CaseTree$CaseKind", false, JCTree.class.getClassLoader());

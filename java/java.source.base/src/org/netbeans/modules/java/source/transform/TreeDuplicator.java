@@ -35,6 +35,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
+import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
@@ -43,6 +44,7 @@ import com.sun.source.tree.ExportsTree;
 import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.ForLoopTree;
+import com.sun.source.tree.GuardedPatternTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.IfTree;
 import com.sun.source.tree.ImportTree;
@@ -62,6 +64,7 @@ import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.OpensTree;
 import com.sun.source.tree.PackageTree;
 import com.sun.source.tree.ParameterizedTypeTree;
+import com.sun.source.tree.ParenthesizedPatternTree;
 import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.ProvidesTree;
@@ -664,6 +667,21 @@ public class TreeDuplicator implements TreeVisitor<Tree, Void> {
 
     @Override
     public Tree visitYield(YieldTree node, Void p) {
+        return node;
+    }
+
+    @Override
+    public Tree visitDefaultCaseLabel(DefaultCaseLabelTree node, Void p) {
+        return node;
+    }
+
+    @Override
+    public Tree visitGuardedPattern(GuardedPatternTree node, Void p) {
+        return node;
+    }
+
+    @Override
+    public Tree visitParenthesizedPattern(ParenthesizedPatternTree node, Void p) {
         return node;
     }
 }

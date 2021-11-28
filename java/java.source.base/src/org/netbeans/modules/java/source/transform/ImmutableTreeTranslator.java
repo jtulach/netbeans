@@ -1426,6 +1426,7 @@ public class ImmutableTreeTranslator implements TreeVisitor<Tree,Object> {
             tree = n;
         }
         return tree;
+    }
 
     @Override
     public Tree visitBindingPattern(BindingPatternTree node, Object p) {
@@ -1439,6 +1440,21 @@ public class ImmutableTreeTranslator implements TreeVisitor<Tree,Object> {
 
     @Override
     public Tree visitYield(YieldTree node, Object p) {
+        return node;
+    }
+
+    @Override
+    public Tree visitDefaultCaseLabel(DefaultCaseLabelTree node, Object p) {
+        return node;
+    }
+
+    @Override
+    public Tree visitGuardedPattern(GuardedPatternTree node, Object p) {
+        return node;
+    }
+
+    @Override
+    public Tree visitParenthesizedPattern(ParenthesizedPatternTree node, Object p) {
         return node;
     }
 }

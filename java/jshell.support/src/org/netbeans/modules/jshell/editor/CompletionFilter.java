@@ -20,6 +20,7 @@ package org.netbeans.modules.jshell.editor;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.EntityTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -259,6 +260,11 @@ final class CompletionFilter extends DocTrees {
 
     @Override
     public TypeMirror getType(DocTreePath dtp) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getCharacters(EntityTree et) {
         throw new UnsupportedOperationException();
     }
 }
