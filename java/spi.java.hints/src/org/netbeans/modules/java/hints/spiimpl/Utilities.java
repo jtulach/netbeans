@@ -1390,7 +1390,7 @@ public class Utilities {
             return result;
 
         }
-        
+/*
         @Override
         public JCVariableDecl formalParameter(boolean lambdaParam) {
             if (token.kind == TokenKind.IDENTIFIER) {
@@ -1408,6 +1408,7 @@ public class Utilities {
 
             return super.formalParameter(lambdaParam);
         }
+*/
 
         @Override
         protected JCVariableDecl implicitParameter() {
@@ -1476,25 +1477,10 @@ public class Utilities {
             return result;
         }
         
-        @Override
         public com.sun.tools.javac.util.List<JCTree> classOrInterfaceBodyDeclaration(com.sun.tools.javac.util.Name className, boolean isInterface) {
-            if (token.kind == TokenKind.IDENTIFIER) {
-                if (token.name().startsWith(dollar)) {
-                    com.sun.tools.javac.util.Name name = token.name();
-
-                    Token peeked = S.token(1);
-
-                    if (peeked.kind == TokenKind.SEMI) {
-                        nextToken();
-                        nextToken();
-                        
-                        return com.sun.tools.javac.util.List.<JCTree>of(F.Ident(name));
-                    }
-                }
-            }
-            return super.classOrInterfaceBodyDeclaration(className, isInterface);
+            return classOrInterfaceOrRecordBodyDeclaration(className, isInterface, false);
         }
-
+        
         @Override
         protected JCExpression checkExprStat(JCExpression t) {
             if (t.getTag() == JCTree.Tag.IDENT) {
