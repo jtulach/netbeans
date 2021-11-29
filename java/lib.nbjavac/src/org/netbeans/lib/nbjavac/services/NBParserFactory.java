@@ -123,6 +123,7 @@ public class NBParserFactory extends ParserFactory {
             return super.methodDeclaratorRest(pos, mods, type, name, typarams, isInterface, isVoid, isRecord, dc);
         }
 
+
         @Override
         public int getEndPos(JCTree jctree) {
             return TreeInfo.getEndPos(jctree, endPosTable);

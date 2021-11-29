@@ -1395,14 +1395,17 @@ public class ExpectedTypeResolver implements TreeVisitor<List<? extends TypeMirr
         return null;
     }
    
+    @Override
     public List<? extends TypeMirror> visitBindingPattern(BindingPatternTree bpt, Object p) {
         return null;
     }
     
+    @Override
     public List<? extends TypeMirror> visitSwitchExpression(SwitchExpressionTree set, Object p) {
         return null;
     }
 
+    @Override
     public List<? extends TypeMirror> visitYield(YieldTree yt, Object p) {
         return null;
     }

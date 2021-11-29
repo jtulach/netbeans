@@ -46,6 +46,7 @@ import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
 import com.sun.source.tree.*;
+import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.BoundKind;
@@ -63,6 +64,7 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCCaseLabel;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.ListBuffer;
@@ -82,7 +84,6 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileObject;
 import org.netbeans.api.annotations.common.NonNull;
-import org.netbeans.modules.java.source.TreeShims;
 import static org.netbeans.modules.java.source.save.PositionEstimator.*;
 
 /**
@@ -197,44 +198,23 @@ public class TreeFactory {
     
     public BreakTree Break(CharSequence label) {
         Name n = label != null ? names.fromString(label.toString()) : null;
-        try {
-            return make.at(NOPOS).Break(n);
-        } catch (NoSuchMethodError err) {
-            try {
-                return (BreakTree) make.getClass().getMethod("Break", JCExpression.class).invoke(make.at(NOPOS), label != null ? Identifier(label) : null);
-            } catch (Throwable t) {
-                err.addSuppressed(t);
-                throw throwAny(err);
-            }
-        }
+        return make.at(NOPOS).Break(n);
     }
     
-    public BreakTree Break(ExpressionTree value) {
-        try {
-            return (BreakTree) make.getClass().getMethod("Break", JCExpression.class).invoke(make.at(NOPOS), (JCExpression) value);
-        } catch (Throwable t) {
-            throw throwAny(t);
-        }
+    public YieldTree Yield(ExpressionTree value) {
+        return make.at(NOPOS).Yield((JCExpression) value);
     }
     
+    public DefaultCaseLabelTree DefaultCaseLabel() {
+        return make.at(NOPOS).DefaultCaseLabel();
+    }
+
     public CaseTree Case(ExpressionTree expression, List<? extends StatementTree> statements) {
         ListBuffer<JCStatement> lb = new ListBuffer<>();
         for (StatementTree t : statements)
             lb.append((JCStatement)t);
-        try {
-            final TreeMaker at = make.at(NOPOS);
-            final com.sun.tools.javac.util.List<JCExpression> exprList = expression == null ? com.sun.tools.javac.util.List.nil() : com.sun.tools.javac.util.List.of((JCExpression)expression);
-            return at.Case(CaseTree.CaseKind.STATEMENT, null, lb.toList(), null);
-        } catch (NoSuchMethodError err) {
-            try {
-                Class<Enum> caseKind = (Class<Enum>) Class.forName("com.sun.source.tree.CaseTree$CaseKind", false, JCTree.class.getClassLoader());
-                com.sun.tools.javac.util.List<? extends Object> pats = expression != null ? com.sun.tools.javac.util.List.of((JCExpression)expression) : com.sun.tools.javac.util.List.nil();
-                return (CaseTree) make.getClass().getMethod("Case", caseKind, com.sun.tools.javac.util.List.class, com.sun.tools.javac.util.List.class, JCTree.class).invoke(make.at(NOPOS), Enum.valueOf(caseKind, "STATEMENT"), pats, lb.toList(), null);
-            } catch (Throwable t) {
-                err.addSuppressed(t);
-                throw throwAny(err);
-            }
-        }
+        com.sun.tools.javac.util.List<JCCaseLabel> pats = expression != null ? com.sun.tools.javac.util.List.of((JCExpression)expression) : com.sun.tools.javac.util.List.nil();
+        return make.at(NOPOS).Case(CaseKind.STATEMENT, pats, lb.toList(), null);
     }
     
     public CaseTree Case(List<? extends ExpressionTree> expressions, List<? extends StatementTree> statements) {
@@ -258,46 +238,31 @@ public class TreeFactory {
     
     public CaseTree Case(List<? extends ExpressionTree> expressions, Tree body) {
         ListBuffer<JCStatement> lb = new ListBuffer<>();
-        lb.append(body instanceof ExpressionTree ? (JCStatement) Break((ExpressionTree) body) : (JCStatement) body);
-        ListBuffer<JCExpression> exprs = new ListBuffer<>();
+        lb.append(body instanceof ExpressionTree ? (JCStatement) Yield((ExpressionTree) body) : (JCStatement) body);
+        ListBuffer<JCCaseLabel> exprs = new ListBuffer<>();
         for (ExpressionTree t : expressions)
             exprs.append((JCExpression)t);
-        try {
-            Class<Enum> caseKind = (Class<Enum>) Class.forName("com.sun.source.tree.CaseTree$CaseKind", false, JCTree.class.getClassLoader());
-            return (CaseTree) make.getClass().getMethod("Case", caseKind, com.sun.tools.javac.util.List.class, com.sun.tools.javac.util.List.class, JCTree.class).invoke(make.at(NOPOS), Enum.valueOf(caseKind, "RULE"), exprs.toList(), lb.toList(), body);
-        } catch (Throwable t) {
-            throw throwAny(t);
-        }
+        return make.Case(CaseKind.RULE, exprs.toList(), lb.toList(), (JCTree) body);
     }
     
-    public CaseTree CaseMultiplePatterns(List<? extends Tree> expressions, Tree body) {
+    public CaseTree CaseMultiplePatterns(List<? extends CaseLabelTree> expressions, Tree body) {
         ListBuffer<JCStatement> lb = new ListBuffer<>();
-        lb.append(body instanceof ExpressionTree ? (JCStatement) Break((ExpressionTree) body) : (JCStatement) body);
-        ListBuffer<JCTree> exprs = new ListBuffer<>();
+        lb.append(body instanceof ExpressionTree ? (JCStatement) Yield((ExpressionTree) body) : (JCStatement) body);
+        ListBuffer<JCCaseLabel> exprs = new ListBuffer<>();
         for (Tree t : expressions)
-            exprs.append((JCTree)t);
-        try {
-            Class<Enum> caseKind = (Class<Enum>) Class.forName("com.sun.source.tree.CaseTree$CaseKind", false, JCTree.class.getClassLoader());
-            return (CaseTree) make.getClass().getMethod("Case", caseKind, com.sun.tools.javac.util.List.class, com.sun.tools.javac.util.List.class, JCTree.class).invoke(make.at(NOPOS), Enum.valueOf(caseKind, "RULE"), exprs.toList(), lb.toList(), body);
-        } catch (Throwable t) {
-            throw throwAny(t);
-        }
+            exprs.append((JCCaseLabel)t);
+        return make.at(NOPOS).Case(CaseKind.RULE, exprs.toList(), lb.toList(), (JCTree) body);
     }
     
 
-    public CaseTree CaseMultiplePatterns(List<? extends Tree> expressions, List<? extends StatementTree> statements) {
+    public CaseTree CaseMultiplePatterns(List<? extends CaseLabelTree> expressions, List<? extends StatementTree> statements) {
         ListBuffer<JCStatement> lb = new ListBuffer<JCStatement>();
         for (StatementTree t : statements)
             lb.append((JCStatement)t);
-        ListBuffer<JCTree> exprs = new ListBuffer<>();
+        ListBuffer<JCCaseLabel> exprs = new ListBuffer<>();
         for (Tree t : expressions)
-            exprs.append((JCTree)t);
-        try {
-            Class<Enum> caseKind = (Class<Enum>) Class.forName("com.sun.source.tree.CaseTree$CaseKind", false, JCTree.class.getClassLoader());
-            return (CaseTree) make.getClass().getMethod("Case", caseKind, com.sun.tools.javac.util.List.class, com.sun.tools.javac.util.List.class, JCTree.class).invoke(make.at(NOPOS), Enum.valueOf(caseKind, "STATEMENT"), exprs.toList(), lb.toList(), null);
-        } catch (Throwable t) {
-            throw throwAny(t);
-        }
+            exprs.append((JCCaseLabel)t);
+        return make.at(NOPOS).Case(CaseKind.RULE, exprs.toList(), lb.toList(), null);
     }
     
     public CatchTree Catch(VariableTree parameter, BlockTree block) {
@@ -841,8 +806,12 @@ public class TreeFactory {
         return make.at(NOPOS).Switch((JCExpression)expression, cases.toList());
     }
 
-    public Tree SwitchExpression(ExpressionTree expression, List<? extends CaseTree> caseList) {
-        return TreeShims.SwitchExpression(make.at(NOPOS), expression, caseList);
+    public SwitchExpressionTree SwitchExpression(ExpressionTree expression, List<? extends CaseTree> caseList) {
+        ListBuffer<JCTree.JCCase> cases = new ListBuffer<JCTree.JCCase>();
+        for (CaseTree t : caseList) {
+            cases.append((JCTree.JCCase) t);
+        }
+        return make.at(NOPOS).SwitchExpression((JCExpression) expression, cases.toList());
     }
 
     public SynchronizedTree Synchronized(ExpressionTree expression, BlockTree block) {
@@ -956,12 +925,16 @@ public class TreeFactory {
         }
     }
     
-    public Tree BindingPattern(VariableTree vt) {
-        try {
-            return (Tree) make.getClass().getMethod("BindingPattern",JCVariableDecl.class).invoke(make.at(NOPOS), vt);
-        } catch (Throwable t) {
-            throw throwAny(t);
-        }
+    public BindingPatternTree BindingPattern(VariableTree vt) {
+        return make.at(NOPOS).BindingPattern((JCVariableDecl) vt);
+    }
+
+    public GuardedPatternTree GuardedPattern(PatternTree pattern, ExpressionTree guard) {
+        return make.at(NOPOS).GuardPattern((JCPattern) pattern, (JCExpression) guard);
+    }
+
+    public ParenthesizedPatternTree ParenthesizedPattern(PatternTree pattern) {
+        return make.at(NOPOS).ParenthesizedPattern((JCPattern) pattern);
     }
 
     public VariableTree Variable(VariableElement variable, ExpressionTree initializer) {
@@ -1740,7 +1713,7 @@ public class TreeFactory {
         }
         return copy;
     }
-    
+
     /**
      * Represents operation on list
      */
@@ -1964,28 +1937,7 @@ public class TreeFactory {
             }
             paramTypesParam = lbl.toList();
         }
-        ReferenceTree refrenceTree = TreeShims.getRefrenceTree(docMake, qualExpr, member, paramTypes, names, paramTypesParam);
-        if (refrenceTree != null) {
-            return refrenceTree;
-        }
-        final String signatureParam = "";
-        final JCExpression qualExprParam = (JCExpression) qualExpr;
-        Name memberParam = member != null ? (Name) names.fromString(member.toString()) : null;
-        final DocTreeMaker dispatchTo = docMake.at(NOPOS);
-        for (java.lang.reflect.Method m : dispatchTo.getClass().getMethods()) {
-            if ("newReferenceTree".equals(m.getName()) && m.getParameterTypes().length >= 4) { // NOI18N
-                try {
-                    if (m.getParameterTypes().length == 5) {
-                        return (ReferenceTree) m.invoke(dispatchTo, signatureParam, null, qualExprParam, memberParam, paramTypesParam);
-                    } else {
-                        return (ReferenceTree) m.invoke(dispatchTo, signatureParam, qualExprParam, memberParam, paramTypesParam);
-                    }
-                } catch (ReflectiveOperationException ex) {
-                    throw new IllegalStateException(ex);
-                }
-            }
-        }
-        throw new IllegalStateException();
+        return docMake.at(NOPOS).newReferenceTree("", (JCTree.JCExpression) qualExpr, qualExpr == null ? null : ((JCTree.JCExpression) qualExpr).getTree(), member != null ? (com.sun.tools.javac.util.Name) names.fromString(member.toString()) : null, paramTypesList);
     }
     
     @SuppressWarnings("unchecked")

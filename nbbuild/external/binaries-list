@@ -15,8 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 16398550402B27F81CD0D508CEF54B3E47A4A6DA org.apache.rat:apache-rat:0.12
-B195FD4F74CA4BA8BF5985E9103B96C6F0D9079D com.dukescript.nbjavac:nb-javac:jdk-17+35:api
-E748E597EACD349D65869A26FCB99A8B4DF887C2 com.dukescript.nbjavac:nb-javac:jdk-17+35
 E32B3483FBF362C92088CB79E9F1F161F3F64A21 org.apidesign.javadoc:codesnippet-doclet:0.30
 B8A142EBDE0CDC071A347B2E93C8548C2A5D09B0 org.netbeans.tools:sigtest-maven-plugin:1.4
 C9AD4A0850AB676C5C64461A05CA524CDFFF59F1 com.googlecode.json-simple:json-simple:1.1.1

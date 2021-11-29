@@ -243,6 +243,17 @@ final class CompletionFilter extends DocTrees {
     public TypeMirror getLub(CatchTree ct) {
         return delegate.getLub(ct);
     }
+
+    @Override
+    public TypeMirror getType(DocTreePath path) {
+        return delegate.getType(path);
+    }
+
+    @Override
+    public String getCharacters(EntityTree tree) {
+        return delegate.getCharacters(tree);
+    }
+
     private DocTrees   delegate;
 
     @Override

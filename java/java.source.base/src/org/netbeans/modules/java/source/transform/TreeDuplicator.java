@@ -651,6 +651,60 @@ public class TreeDuplicator implements TreeVisitor<Tree, Void> {
     }
 
     @Override
+    public Tree visitYield(YieldTree tree, Void p) {
+        YieldTree n = make.Yield(tree.getValue());
+        model.setType(n, model.getType(tree));
+        comments.copyComments(tree, n);
+        model.setPos(n, model.getPos(tree));
+        return n;
+    }
+
+    @Override
+    public Tree visitBindingPattern(BindingPatternTree tree, Void p) {
+        BindingPatternTree n = make.BindingPattern(tree.getVariable());
+        model.setType(n, model.getType(tree));
+        comments.copyComments(tree, n);
+        model.setPos(n, model.getPos(tree));
+        return n;
+    }
+
+    @Override
+    public Tree visitDefaultCaseLabel(DefaultCaseLabelTree tree, Void p) {
+        DefaultCaseLabelTree n = make.DefaultCaseLabel();
+        model.setType(n, model.getType(tree));
+        comments.copyComments(tree, n);
+        model.setPos(n, model.getPos(tree));
+        return n;
+    }
+
+    @Override
+    public Tree visitGuardedPattern(GuardedPatternTree tree, Void p) {
+        GuardedPatternTree n = make.GuardedPattern(tree.getPattern(), tree.getExpression());
+        model.setType(n, model.getType(tree));
+        comments.copyComments(tree, n);
+        model.setPos(n, model.getPos(tree));
+        return n;
+    }
+
+    @Override
+    public Tree visitParenthesizedPattern(ParenthesizedPatternTree tree, Void p) {
+        ParenthesizedPatternTree n = make.ParenthesizedPattern(tree.getPattern());
+        model.setType(n, model.getType(tree));
+        comments.copyComments(tree, n);
+        model.setPos(n, model.getPos(tree));
+        return n;
+    }
+
+    @Override
+    public Tree visitSwitchExpression(SwitchExpressionTree tree, Void p) {
+        SwitchExpressionTree n = make.SwitchExpression(tree.getExpression(), tree.getCases());
+        model.setType(n, model.getType(tree));
+        comments.copyComments(tree, n);
+        model.setPos(n, model.getPos(tree));
+        return n;
+    }
+
+    @Override
     public Tree visitOther(Tree tree, Void p) {
         return tree;
     }
