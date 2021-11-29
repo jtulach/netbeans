@@ -42,8 +42,8 @@ nbbuild/external/langtools-9.zip nbbuild/external/langtools-9.zip
 nbbuild/external/json-simple-1.1.1.jar ide/libs.json_simple/external/json-simple-1.1.1.jar
 
 # Compile only nb-javac
-java/libs.javacapi/external/nb-javac-15.0.0.2-api.jar nbbuild/external/nb-javac-15.0.0.2-api.jar
-java/libs.javacimpl/external/nb-javac-15.0.0.2.jar nbbuild/external/nb-javac-15.0.0.2.jar
+java/libs.nbjavacapi/external/nb-javac-jdk-17+35-api.jar nbbuild/external/nb-javac-jdk-17+35-api.jar
+java/libs.nbjavacapi/external/nb-javac-jdk-17+35.jar nbbuild/external/nb-javac-jdk-17+35.jar
 
 # JFlex is used by multiple modules.
 webcommon/javascript2.jade/external/jflex-1.4.3.jar webcommon/javascript2.lexer/external/jflex-1.4.3.jar
