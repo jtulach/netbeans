@@ -708,34 +708,4 @@ public class TreeDuplicator implements TreeVisitor<Tree, Void> {
     public Tree visitOther(Tree tree, Void p) {
         return tree;
     }
-
-    @Override
-    public Tree visitBindingPattern(BindingPatternTree node, Void p) {
-        return node;
-    }
-
-    @Override
-    public Tree visitSwitchExpression(SwitchExpressionTree node, Void p) {
-        return node;
-    }
-
-    @Override
-    public Tree visitYield(YieldTree node, Void p) {
-        return node;
-    }
-
-    @Override
-    public Tree visitDefaultCaseLabel(DefaultCaseLabelTree node, Void p) {
-        return node;
-    }
-
-    @Override
-    public Tree visitGuardedPattern(GuardedPatternTree node, Void p) {
-        return node;
-    }
-
-    @Override
-    public Tree visitParenthesizedPattern(ParenthesizedPatternTree node, Void p) {
-        return node;
-    }
 }

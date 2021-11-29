@@ -1937,7 +1937,7 @@ public class TreeFactory {
             }
             paramTypesParam = lbl.toList();
         }
-        return docMake.at(NOPOS).newReferenceTree("", (JCTree.JCExpression) qualExpr, qualExpr == null ? null : ((JCTree.JCExpression) qualExpr).getTree(), member != null ? (com.sun.tools.javac.util.Name) names.fromString(member.toString()) : null, paramTypesList);
+        return docMake.at(NOPOS).newReferenceTree("", (JCTree.JCExpression) qualExpr, qualExpr == null ? null : ((JCTree.JCExpression) qualExpr).getTree(), member != null ? (com.sun.tools.javac.util.Name) names.fromString(member.toString()) : null, paramTypesParam);
     }
     
     @SuppressWarnings("unchecked")
