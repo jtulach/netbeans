@@ -70,6 +70,14 @@ export class NbLanguageClient extends LanguageClient {
     findTreeViewService(): TreeViewService {
         return this._treeViewService;
     }
+
+    stop(): Promise<void> {
+        // stop will be called even in case of external close & client restart, so OK.
+        const r: Promise<void> = super.stop();
+        this._treeViewService.dispose();
+        return r;
+    }
+    
 }
 
 function handleLog(log: vscode.OutputChannel, msg: string): void {
@@ -228,6 +236,10 @@ export function activate(context: ExtensionContext): VSNetBeansAPI {
     let debugDescriptionFactory = new NetBeansDebugAdapterDescriptionFactory();
     context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('java8+', debugDescriptionFactory));
     context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('nativeimage', debugDescriptionFactory));
+
+    // register content provider
+    let sourceForContentProvider = new NetBeansSourceForContentProvider();
+    context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider('sourceFor', sourceForContentProvider));
 
     // register commands
     context.subscriptions.push(commands.registerCommand('java.workspace.new', async (ctx) => {
@@ -514,7 +526,7 @@ function doActivateWithJDK(specifiedJDK: string | null, context: ExtensionContex
                 stdOut = null;
             }
         }
-        let p = launcher.launch(info, "--modules", "--list");
+        let p = launcher.launch(info, "--modules", "--list", "-J-XX:PerfMaxStringConstLength=10240");
         handleLog(log, "LSP server launching: " + p.pid);
         p.stdout.on('data', function(d: any) {
             logAndWaitForEnabled(d.toString(), true);
@@ -707,6 +719,7 @@ function doActivateWithJDK(specifiedJDK: string | null, context: ExtensionContex
         
             // create project explorer:
             c.findTreeViewService().createView('foundProjects', 'Projects', { canSelectMany : false });
+            c.findTreeViewService().createView('database.connections', undefined , { canSelectMany : true });
         }).catch(setClient[1]);
     }).catch((reason) => {
         activationPending = false;
@@ -977,5 +990,18 @@ class NetBeansConfigurationNativeResolver implements vscode.DebugConfigurationPr
         }
 
         return config;
+    }
+}
+
+class NetBeansSourceForContentProvider implements vscode.TextDocumentContentProvider {
+
+    provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): vscode.ProviderResult<string> {
+        vscode.window.withProgress({location: ProgressLocation.Notification, title: 'Finding source...', cancellable: false}, () => {
+            return vscode.commands.executeCommand('java.source.for', uri.toString()).then(() => {
+            }, (reason: any) => {
+                vscode.window.showErrorMessage(reason.data);
+            });
+        });
+        return Promise.reject();
     }
 }
