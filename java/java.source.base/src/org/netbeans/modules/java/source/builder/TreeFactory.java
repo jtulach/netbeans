@@ -210,39 +210,15 @@ public class TreeFactory {
     }
 
     public CaseTree Case(ExpressionTree expression, List<? extends StatementTree> statements) {
-        ListBuffer<JCStatement> lb = new ListBuffer<>();
-        for (StatementTree t : statements)
-            lb.append((JCStatement)t);
-        com.sun.tools.javac.util.List<JCCaseLabel> pats = expression != null ? com.sun.tools.javac.util.List.of((JCExpression)expression) : com.sun.tools.javac.util.List.nil();
-        return make.at(NOPOS).Case(CaseKind.STATEMENT, pats, lb.toList(), null);
+        return Case(expression != null ? Collections.singletonList(expression) : Collections.emptyList(), statements);
     }
     
     public CaseTree Case(List<? extends ExpressionTree> expressions, List<? extends StatementTree> statements) {
-        switch (expressions.size()) {
-            case 0: return Case((ExpressionTree) null, statements);
-            case 1: return Case(expressions.get(0), statements);
-        }
-        ListBuffer<JCStatement> lb = new ListBuffer<JCStatement>();
-        for (StatementTree t : statements)
-            lb.append((JCStatement)t);
-        ListBuffer<JCExpression> exprs = new ListBuffer<>();
-        for (ExpressionTree t : expressions)
-            exprs.append((JCExpression)t);
-        try {
-            Class<Enum> caseKind = (Class<Enum>) Class.forName("com.sun.source.tree.CaseTree$CaseKind", false, JCTree.class.getClassLoader());
-            return (CaseTree) make.getClass().getMethod("Case", caseKind, com.sun.tools.javac.util.List.class, com.sun.tools.javac.util.List.class, JCTree.class).invoke(make.at(NOPOS), Enum.valueOf(caseKind, "STATEMENT"), exprs.toList(), lb.toList(), null);
-        } catch (Throwable t) {
-            throw throwAny(t);
-        }
+        return CaseMultiplePatterns(expressions.isEmpty() ? Collections.singletonList(DefaultCaseLabel()) : expressions, statements);
     }
     
     public CaseTree Case(List<? extends ExpressionTree> expressions, Tree body) {
-        ListBuffer<JCStatement> lb = new ListBuffer<>();
-        lb.append(body instanceof ExpressionTree ? (JCStatement) Yield((ExpressionTree) body) : (JCStatement) body);
-        ListBuffer<JCCaseLabel> exprs = new ListBuffer<>();
-        for (ExpressionTree t : expressions)
-            exprs.append((JCExpression)t);
-        return make.Case(CaseKind.RULE, exprs.toList(), lb.toList(), (JCTree) body);
+        return CaseMultiplePatterns(expressions.isEmpty() ? Collections.singletonList(DefaultCaseLabel()) : expressions, body);
     }
     
     public CaseTree CaseMultiplePatterns(List<? extends CaseLabelTree> expressions, Tree body) {
@@ -262,7 +238,7 @@ public class TreeFactory {
         ListBuffer<JCCaseLabel> exprs = new ListBuffer<>();
         for (Tree t : expressions)
             exprs.append((JCCaseLabel)t);
-        return make.at(NOPOS).Case(CaseKind.RULE, exprs.toList(), lb.toList(), null);
+        return make.at(NOPOS).Case(CaseKind.STATEMENT, exprs.toList(), lb.toList(), null);
     }
     
     public CatchTree Catch(VariableTree parameter, BlockTree block) {
