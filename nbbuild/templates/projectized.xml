@@ -100,7 +100,8 @@
             <istrue value="${requires.nb.javac}"/>
         </condition>
     </target>
-    <target name="-init-bootclasspath-prepend-run" depends="-init-bootclasspath-prepend-compile" unless="have-jdk-1.9">
+    <target name="-init-bootclasspath-prepend-run" depends="-init-bootclasspath-prepend-compile,-init-bootclasspath-prepend-run8,-init-bootclasspath-prepend-run9"/>
+    <target name="-init-bootclasspath-prepend-run8" depends="-init-bootclasspath-prepend-compile" unless="have-jdk-1.9">
         <condition property="run.bootclasspath.prepend" value="${bootclasspath.prepend.nb}">
             <istrue value="${requires.nb.javac.impl}"/>
         </condition>
@@ -115,6 +116,16 @@
         <condition property="run.bootclasspath.prepend" value="${bootclasspath.prepend}">
             <and>
                 <isset property="bootclasspath.prepend"/>
+                <not>
+                    <istrue value="${test.use.jdk.javac}"/>
+                </not>
+            </and>
+        </condition>
+    </target>
+    <target name="-init-bootclasspath-prepend-run9" depends="-init-bootclasspath-prepend-compile" if="have-jdk-1.9">
+        <condition property="test.bootclasspath.prepend.args" value="--limit-modules=java.base,java.logging,java.xml,java.prefs,java.desktop,java.management,java.instrument,jdk.zipfs,java.scripting,java.naming">
+            <and>
+                <istrue value="${requires.nb.javac}"/>
                 <not>
                     <istrue value="${test.use.jdk.javac}"/>
                 </not>
@@ -276,7 +287,7 @@
     <target name="-build-libs.junit4" depends="-check-for-libs.junit4" if="build.libs.junit4">
         <ant dir="${nb_all}/platform/libs.junit4" inheritall="false"/>
     </target>
-    <target name="test-lib-init" depends="init,-build-libs.junit4">
+    <target name="test-lib-init" depends="-init-bootclasspath-prepend,init,-build-libs.junit4">
         <path id="test.unit.lib.cp"/>
         <!-- The IDE is so big that anything enabling all clusters will exceed the JVM's defaults! -->
         <!-- Any changes please propagate into nbbuild/testdist/release/one-module.xml test.run.args property -->
