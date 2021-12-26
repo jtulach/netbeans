@@ -697,7 +697,7 @@ matrix:
             - wget https://raw.githubusercontent.com/sormuras/bach/master/install-jdk.sh
             - export TEST_JDK=`bash install-jdk.sh --feature 11 --license GPL --emit-java-home --silent | tail -1`
             - export JAVA_HOME=$TEST_JDK
-            - export OPTS="-Dmetabuild.jsonurl=https://raw.githubusercontent.com/apache/netbeans-jenkins-lib/master/meta/netbeansrelease.json $OPTS -Dnbjdk.home=$TEST_JDK -Dtest.use.jdk.javac=true"
+            - export OPTS="-Dmetabuild.jsonurl=https://raw.githubusercontent.com/apache/netbeans-jenkins-lib/master/meta/netbeansrelease.json $OPTS -Dnbjdk.home=$TEST_JDK"
             - ant $OPTS clean
             - ant $OPTS build
             - ant $OPTS test -Dtest.includes=NoTestsJustBuild
@@ -711,7 +711,7 @@ matrix:
           before_script:
             - wget https://raw.githubusercontent.com/sormuras/bach/master/install-jdk.sh
             - export TEST_JDK=`bash install-jdk.sh --feature 15 --license GPL --emit-java-home --silent | tail -1`
-            - export OPTS="-Dmetabuild.jsonurl=https://raw.githubusercontent.com/apache/netbeans-jenkins-lib/master/meta/netbeansrelease.json $OPTS -Dtest.nbjdk.home=$TEST_JDK -Dtest.use.jdk.javac=true"
+            - export OPTS="-Dmetabuild.jsonurl=https://raw.githubusercontent.com/apache/netbeans-jenkins-lib/master/meta/netbeansrelease.json $OPTS -Dtest.nbjdk.home=$TEST_JDK"
             - ant $OPTS clean
             - ant $OPTS build
           script:
