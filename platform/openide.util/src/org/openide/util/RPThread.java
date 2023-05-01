@@ -41,6 +41,7 @@ final class RPThread extends Thread {
     private static final Stack<RPThread> pool = new Stack<RPThread>();
     /* One minute of inactivity and the Thread will die if not assigned */
     private static final int INACTIVE_TIMEOUT = Integer.getInteger("org.openide.util.RequestProcessor.inactiveTime", 60000); // NOI18N
+
     /** Internal variable holding the Runnable to be run.
      * Used for passing Runnable through Thread boundaries.
      */
@@ -66,7 +67,7 @@ final class RPThread extends Thread {
      *
      * @return inactive Processor
      */
-    static RPThread get() {
+    static RPThread obtain() {
         RPThread newP = null;
         for (;;) {
             synchronized (pool) {
@@ -88,6 +89,10 @@ final class RPThread extends Thread {
         }
     }
 
+    static RPThread findFor(Thread c) {
+        return c instanceof RPThread ? (RPThread)c : null;
+    }
+
     private static boolean checkAccess(ThreadGroup g) throws SecurityException {
         g.checkAccess();
         return true;
@@ -98,17 +103,17 @@ final class RPThread extends Thread {
      * @param proc the Processor to return to the pool. It shall be inactive.
      * @param last the debugging string identifying the last client.
      */
-    static void put(RPThread proc, String last) {
+    void inactivate(String last) {
         synchronized (pool) {
-            proc.setName("Inactive RequestProcessor thread [Was:" + proc.getName() + "/" + last + "]"); // NOI18N
-            proc.idle = true;
-            pool.push(proc);
+            setName("Inactive RequestProcessor thread [Was:" + getName() + "/" + last + "]"); // NOI18N
+            idle = true;
+            pool.push(this);
         }
     }
 
     /** setPriority wrapper that skips setting the same priority
      * we'return already running at */
-    void setPrio(int priority) {
+    private void setPrio(int priority) {
         if (priority != getPriority()) {
             setPriority(priority);
         }
@@ -329,5 +334,5 @@ final class RPThread extends Thread {
             rp.inParallel.get(c).decrementAndGet();
         }
     }
-    
+
 }

@@ -144,8 +144,8 @@ import org.openide.util.lookup.Lookups;
  * but if the task's run() method was already running, one was out of luck.
  * Since version 6.3
  * the thread running the task is interrupted and the Runnable can check for that
- * and terminate its execution sooner. In the runnable one shall check for 
- * thread interruption (done from {@link RequestProcessor.Task#cancel }) and 
+ * and terminate its execution sooner. In the runnable one shall check for
+ * thread interruption (done from {@link RequestProcessor.Task#cancel }) and
  * if true, return immediately as in this example:
  * <pre>
  * private static final RequestProcessor RP = new {@link #RequestProcessor(String,int,boolean) RequestProcessor("Interruptible", 1, true)};
@@ -193,7 +193,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
     /** If the RP was stopped, this variable will be set, every new post()
      * will throw an exception and no task will be processed any further */
     volatile boolean stopped = false;
-    
+
     /** Flag indicating that awaiting tasks should be executed although
      * RP is in stopped state (rejecting new tasks) */
     volatile boolean finishAwaitingTasks = false;
@@ -207,7 +207,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
 
     /** Actualy the first item is pending to be processed.
      * Can be accessed/trusted only under the above processorLock lock.
-     * If null, nothing is scheduled and the processor is not running. 
+     * If null, nothing is scheduled and the processor is not running.
      * @GuardedBy("processorLock")
      */
     private final SortedSet<Item> queue = new TreeSet<Item>();
@@ -219,7 +219,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
     Map<Class<? extends Runnable>,AtomicInteger> inParallel;
     /** Warn if there is parallel execution */
     final int warnParallel;
-    
+
     /** support for interrupts or not? */
     boolean interruptThread;
     /** fill stacktraces when task is posted? */
@@ -241,7 +241,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
      * <pre>
      * class MyClass {
      *   private static final RequestProcessor RP = new RequestProcessor(MyClass.class);
-     * 
+     *
      * }
      * </pre>
      * Behaves as <code>new RequestProcessor(MyClass.class.getName())</code>.
@@ -263,14 +263,14 @@ public final class RequestProcessor implements ScheduledExecutorService {
         this(name, throughput, false);
     }
 
-    /** Creates a new named RequestProcessor with defined throughput which 
+    /** Creates a new named RequestProcessor with defined throughput which
      * can support interruption of the thread the processor runs in.
      * There always was a way how to cancel not yet running task using {@link RequestProcessor.Task#cancel }
      * but if the task was already running, one was out of luck. With this
      * constructor one can create a {@link RequestProcessor} which threads
      * thread running tasks are interrupted and the Runnable can check for that
-     * and terminate its execution sooner. In the runnable one shall check for 
-     * thread interruption (done from {@link RequestProcessor.Task#cancel }) and 
+     * and terminate its execution sooner. In the runnable one shall check for
+     * thread interruption (done from {@link RequestProcessor.Task#cancel }) and
      * if true, return immediatelly as in this example:
      * <PRE>
      * public void run () {
@@ -322,7 +322,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
         this.warnParallel = warnParallel;
     }
 
-    
+
     /** <b>Warning:</b> The instance of <code>RequestProcessor</code> returned
      * by this method has very bad performance side effects, don't use unless
      * you understand all implications!
@@ -359,12 +359,12 @@ public final class RequestProcessor implements ScheduledExecutorService {
      * <p>
      * Tasks posted to this instance may be canceled until they start their
      * execution. If a there is a need to cancel a task while it is running
-     * a seperate request processor needs to be created via 
+     * a seperate request processor needs to be created via
      * {@link #RequestProcessor(String, int, boolean)} constructor.
      *
      * @return an instance of RequestProcessor that is capable of performing
      * "unlimited" (currently limited to 50, just for case of misuse) number
-     * of requests in parallel. 
+     * of requests in parallel.
      *
      * @see #RequestProcessor(String, int, boolean)
      * @see RequestProcessor.Task#cancel
@@ -375,7 +375,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
         return UNLIMITED;
     }
 
-    /** Implements contract of {@link Executor}. 
+    /** Implements contract of {@link Executor}.
      * Simply delegates to {@link #post(java.lang.Runnable)}.
      * @param command the runnable to execute
      * @since 7.16
@@ -384,7 +384,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
     public void execute(Runnable command) {
         post(command);
     }
-    
+
     /** This methods asks the request processor to start given
      * runnable immediately. The default priority is {@link Thread#MIN_PRIORITY}.
      *
@@ -428,7 +428,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
 
     /** Creates request that can be later started by setting its delay.
     * The request is not immediatelly put into the queue. It is planned after
-    * setting its delay by schedule method. By default the initial state of 
+    * setting its delay by schedule method. By default the initial state of
     * the task is <code>!isFinished()</code> so doing waitFinished() will
     * block on and wait until the task is scheduled.
     *
@@ -438,13 +438,13 @@ public final class RequestProcessor implements ScheduledExecutorService {
     public Task create(Runnable run) {
         return create(run, false);
     }
-    
+
     /** Creates request that can be later started by setting its delay.
     * The request is not immediatelly put into the queue. It is planned after
     * setting its delay by schedule method.
     *
     * @param run action to run in the process
-    * @param initiallyFinished should the task be marked initially finished? If 
+    * @param initiallyFinished should the task be marked initially finished? If
     *   so the {@link Task#waitFinished} on the task will succeeded immediatelly even
     *   the task has not yet been {@link Task#schedule}d.
     * @return the task to control execution of given action
@@ -458,7 +458,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
         }
         return t;
     }
-    
+
 
     /** Tests if the current thread is request processor thread.
     * This method could be used to prevent the deadlocks using
@@ -469,9 +469,8 @@ public final class RequestProcessor implements ScheduledExecutorService {
     *          thread, otherwise <CODE>false</CODE>
     */
     public boolean isRequestProcessorThread() {
-        Thread c = Thread.currentThread();
-        if (c instanceof RPThread) {
-            RPThread p = (RPThread)c;
+        RPThread p = RPThread.findFor(Thread.currentThread());
+        if (p != null) {
             return p.procesing == this;
         }
         return false;
@@ -576,14 +575,14 @@ public final class RequestProcessor implements ScheduledExecutorService {
         Logger em = logger();
         boolean loggable = em.isLoggable(Level.FINE);
         boolean wasNull;
-        
+
         synchronized (processorLock) {
             wasNull = item.getTask() == null;
             if (!wasNull) {
                 prioritizedEnqueue(item);
 
                 if (processors.size() < throughput) {
-                    RPThread proc = RPThread.get();
+                    RPThread proc = RPThread.obtain();
                     processors.add(proc);
                     if (proc.getContextClassLoader() != item.ctxLoader) {
                         if (loggable) {
@@ -626,7 +625,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
     Task askForWork(RPThread worker, String debug, Lookup[] lkp) {
         if (getQueue().isEmpty() || (stopped && !finishAwaitingTasks)) { // no more work in this burst, return him
             processors.remove(worker);
-            RPThread.put(worker, debug);
+            worker.inactivate(debug);
             return null;
         } else { // we have some work for the worker, pass it
 
@@ -714,7 +713,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
     }
 
     /**
-     * {@inheritDoc} 
+     * {@inheritDoc}
      * @since org.openide.util 8.2
      */
     @Override
@@ -1027,7 +1026,7 @@ outer:  do {
         long initialDelayMillis = TimeUnit.MILLISECONDS.convert(initialDelay, unit);
         long periodMillis = TimeUnit.MILLISECONDS.convert(period, unit);
 
-        TaskFutureWrapper wrap = fixedDelay ? 
+        TaskFutureWrapper wrap = fixedDelay ?
             new FixedDelayTask(command, initialDelayMillis, periodMillis) :
             new FixedRateTask(command, initialDelay, periodMillis);
         Task t = create(wrap);
@@ -1042,7 +1041,7 @@ outer:  do {
         assert Thread.holdsLock(processorLock);
         return queue;
     }
-    
+
     /**
      * @return a top level ThreadGroup. The method ensures that even Processors
      * created by internal execution will survive the end of the task.
@@ -1069,7 +1068,7 @@ outer:  do {
                 logger().log(Level.WARNING, "AppContext group {0} differs from originally used {1}", new Object[]{nuova, orig});
             }
             return nuova;
-            
+
         }
         @Override
         public ThreadGroup run() {
@@ -1354,7 +1353,7 @@ outer:  do {
             this.delayMillis = delayMillis;
         }
 
-        
+
         @Override
         public long getDelay(TimeUnit unit) {
             return unit.convert(delayMillis, TimeUnit.MILLISECONDS);
@@ -1506,7 +1505,7 @@ outer:  do {
         public boolean cancel() {
             return cancelOrNew(false);
         }
-        
+
         private boolean cancelOrNew(boolean canBeNew) {
             synchronized (processorLock) {
                 boolean success;
@@ -1521,7 +1520,7 @@ outer:  do {
                         p.interruptTask(this, RequestProcessor.this);
                         item = null;
                     }
-                    
+
                     if (success) {
                         item = null;
                     }
@@ -1585,7 +1584,7 @@ outer:  do {
             return priority;
         }
 
-        /** Changes the priority the task will be performed with. 
+        /** Changes the priority the task will be performed with.
          * @param priority the priority level (see e.g. {@link Thread#NORM_PRIORITY}
          */
         public void setPriority(int priority) {
@@ -1623,14 +1622,14 @@ outer:  do {
             if (isRequestProcessorThread()) { //System.err.println(
                 boolean runAtAll;
                 boolean toRun;
-                
+
                 Logger em = logger();
                 boolean loggable = em.isLoggable(Level.FINE);
-                
+
                 if (loggable) {
                     em.log(Level.FINE, "Task.waitFinished on {0} from other task in RP: {1}", new Object[]{this, Thread.currentThread().getName()}); // NOI18N
                 }
-                
+
 
                 synchronized (processorLock) {
                     // correct line:    toRun = (item == null) ? !isFinished (): (item.clear() && !isFinished ());
@@ -1643,11 +1642,11 @@ outer:  do {
                     }
                 }
 
-                if (toRun) { 
+                if (toRun) {
                     if (loggable) {
                         em.fine("    ## running it synchronously"); // NOI18N
                     }
-                    RPThread processor = (RPThread)Thread.currentThread();
+                    RPThread processor = RPThread.findFor(Thread.currentThread());
                     processor.doEvaluate (this, processorLock, RequestProcessor.this);
                 } else { // it is already running in other thread of this RP
                     if (loggable) {
@@ -1745,7 +1744,7 @@ outer:  do {
 
             return (a instanceof Task) ? (Task) a : null;
         }
-        
+
         boolean clearOrNew(boolean canBeNew) {
             return clear(null);
         }
@@ -1796,7 +1795,7 @@ outer:  do {
             }
         }
     }
-    
+
     private static class CreatedItem extends Item {
         public CreatedItem(Task task, RequestProcessor rp) {
             super(task, rp);
@@ -1806,7 +1805,7 @@ outer:  do {
         boolean clearOrNew(boolean canBeNew) {
             return canBeNew;
         }
-        
+
         @Override
         boolean clear(RPThread processor) {
             return false;
@@ -1852,11 +1851,11 @@ outer:  do {
         }
     }
 
-    
+
     private static final class TickTac extends Thread implements Comparator<Item> {
         private static TickTac TICK;
         private final PriorityQueue<Item> queue;
-        
+
         public TickTac() {
             super("RequestProcessor queue manager"); // NOI18N
             setDaemon(true);
@@ -1884,21 +1883,21 @@ outer:  do {
             }
             TickTac.class.notifyAll();
         }
-        
+
         private void scheduleImpl(Item localItem, long delay) {
             assert Thread.holdsLock(TickTac.class);
-            
+
             localItem.when = System.currentTimeMillis() + delay;
             queue.add(localItem);
         }
-        
+
         static final synchronized void cancel(Item localItem) {
             if (TICK != null) {
                 TICK.cancelImpl(localItem);
                 TickTac.class.notifyAll();
             }
         }
-        
+
         private void cancelImpl(Item localItem) {
             assert Thread.holdsLock(TickTac.class);
             queue.remove(localItem);
@@ -1916,9 +1915,9 @@ outer:  do {
                     continue;
                 }
             }
-            
+
         }
-        
+
         private static synchronized Item obtainFirst() throws InterruptedException {
             if (TICK == null) {
                 return null;
