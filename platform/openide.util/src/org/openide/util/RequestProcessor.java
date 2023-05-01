@@ -1513,7 +1513,7 @@ outer:  do {
                     success = item.clearOrNew(canBeNew);
 
                     if (p != null) {
-                        p.interruptTask(this, RequestProcessor.this);
+                        p.interrupt(this, null, RequestProcessor.this);
                         item = null;
                     }
 
@@ -1554,13 +1554,7 @@ outer:  do {
                     success = item.clear(null);
 
                     if (p != null) {
-                        if (interrupt) {
-                            success = p.interrupt(this, RequestProcessor.this);
-                        } else {
-                            //despite its name, will not actually interrupt
-                            //unless the RP specifies that it should
-                            p.interruptTask(this, RequestProcessor.this);
-                        }
+                        success = p.interrupt(this, interrupt ? interrupt : null, DEFAULT);
                         if (success) {
                             item = null;
                         }

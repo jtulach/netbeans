@@ -247,6 +247,7 @@ final class RPThreadImpl extends Thread implements RPThread {
 
     /** Evaluates given task directly.
      */
+    @Override
     public final void doEvaluate(RequestProcessor.Task t, Object processorLock, RequestProcessor src) {
         RequestProcessor.Task previous = todo;
         boolean interrupted = Thread.interrupted();
@@ -267,23 +268,18 @@ final class RPThreadImpl extends Thread implements RPThread {
         }
     }
 
-    /** Called under the processorLock */
-    public void interruptTask(RequestProcessor.Task t, RequestProcessor src) {
-        if (t != todo) {
-            // not running this task so
-            return;
-        }
-        if (src.interruptThread) {
-            // otherwise interrupt this thread
-            interrupt();
-        }
-    }
-
-    public boolean interrupt(RequestProcessor.Task t, RequestProcessor src) {
+    @Override
+    public boolean interrupt(RequestProcessor.Task t, Boolean interrupt, RequestProcessor src) {
+        assert Thread.holdsLock(src.processorLock);
         if (t != todo) {
             return false;
         }
-        interrupt();
+        if (interrupt == null) {
+            interrupt = src.interruptThread;
+        }
+        if (interrupt) {
+            interrupt();
+        }
         return true;
     }
 

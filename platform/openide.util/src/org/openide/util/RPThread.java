@@ -42,7 +42,13 @@ interface RPThread {
     boolean isAlive();
     boolean belongsTo(RequestProcessor aThis);
     void join(long remaining) throws InterruptedException;
-    void interruptTask(RequestProcessor.Task aThis, RequestProcessor aThis0);
-    boolean interrupt(RequestProcessor.Task aThis, RequestProcessor aThis0);
+    /** Interrupts.
+     *
+     * @param task the task to interrupt
+     * @param interrupt if {@code null} then value of {@code rp.interruptTask} is used
+     * @param rp request processor
+     * @return boolean if interrupted
+     */
+    boolean interrupt(RequestProcessor.Task task, Boolean interrupt, RequestProcessor rp);
     void doEvaluate(RequestProcessor.Task aThis, Object processorLock, RequestProcessor aThis0);
 }
