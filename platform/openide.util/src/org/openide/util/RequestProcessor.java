@@ -165,7 +165,7 @@ import org.openide.util.lookup.Lookups;
 public final class RequestProcessor implements ScheduledExecutorService {
 
     static {
-        Processor.class.hashCode(); // ensure loaded; cf. FELIX-2128
+        RPThread.class.hashCode(); // ensure loaded; cf. FELIX-2128
     }
 
     /** the static instance for users that do not want to have own processor */
@@ -178,7 +178,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
     private static final RequestProcessor UNLIMITED;
     /** The counter for automatic naming of unnamed RequestProcessors */
     private static int counter = 0;
-    private static final boolean SLOW;
+    static final boolean SLOW;
     static {
         boolean slow = false;
         assert slow = true;
@@ -200,10 +200,10 @@ public final class RequestProcessor implements ScheduledExecutorService {
 
     /** The lock covering following five fields. They should be accessed
      * only while having this lock held. */
-    private final Object processorLock = new Object();
+    final Object processorLock = new Object();
 
     /** The set holding all the Processors assigned to this RequestProcessor */
-    private final HashSet<Processor> processors = new HashSet<Processor>();
+    private final HashSet<RPThread> processors = new HashSet<RPThread>();
 
     /** Actualy the first item is pending to be processed.
      * Can be accessed/trusted only under the above processorLock lock.
@@ -216,12 +216,12 @@ public final class RequestProcessor implements ScheduledExecutorService {
      * to this RequestProcessors. If 1, all the requests are serialized. */
     private int throughput;
     /** mapping of classes executed in parallel */
-    private Map<Class<? extends Runnable>,AtomicInteger> inParallel;
+    Map<Class<? extends Runnable>,AtomicInteger> inParallel;
     /** Warn if there is parallel execution */
-    private final int warnParallel;
+    final int warnParallel;
     
     /** support for interrupts or not? */
-    private boolean interruptThread;
+    boolean interruptThread;
     /** fill stacktraces when task is posted? */
     private boolean enableStackTraces;
 
@@ -470,8 +470,8 @@ public final class RequestProcessor implements ScheduledExecutorService {
     */
     public boolean isRequestProcessorThread() {
         Thread c = Thread.currentThread();
-        if (c instanceof Processor) {
-            Processor p = (Processor)c;
+        if (c instanceof RPThread) {
+            RPThread p = (RPThread)c;
             return p.procesing == this;
         }
         return false;
@@ -488,7 +488,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
         synchronized (processorLock) {
             stopped = true;
 
-            for (Processor p : processors) {
+            for (RPThread p : processors) {
                 p.interrupt();
             }
         }
@@ -583,7 +583,7 @@ public final class RequestProcessor implements ScheduledExecutorService {
                 prioritizedEnqueue(item);
 
                 if (processors.size() < throughput) {
-                    Processor proc = Processor.get();
+                    RPThread proc = RPThread.get();
                     processors.add(proc);
                     if (proc.getContextClassLoader() != item.ctxLoader) {
                         if (loggable) {
@@ -623,10 +623,10 @@ public final class RequestProcessor implements ScheduledExecutorService {
         item.enqueued = true;
     }
 
-    Task askForWork(Processor worker, String debug, Lookup[] lkp) {
+    Task askForWork(RPThread worker, String debug, Lookup[] lkp) {
         if (getQueue().isEmpty() || (stopped && !finishAwaitingTasks)) { // no more work in this burst, return him
             processors.remove(worker);
-            Processor.put(worker, debug);
+            RPThread.put(worker, debug);
             return null;
         } else { // we have some work for the worker, pass it
 
@@ -703,8 +703,8 @@ public final class RequestProcessor implements ScheduledExecutorService {
     @Override
     public boolean isTerminated() {
         boolean result = true;
-        Set<Processor> set = collectProcessors(new HashSet<Processor>());
-        for (Processor p : set) {
+        Set<RPThread> set = collectProcessors(new HashSet<RPThread>());
+        for (RPThread p : set) {
             if (p.isAlive() && p.belongsTo(this)) {
                 result = false;
                 break;
@@ -723,13 +723,13 @@ public final class RequestProcessor implements ScheduledExecutorService {
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(timeout, unit);
         boolean result = stopped;
         long doneTime = System.currentTimeMillis() + timeoutMillis;
-        Set<Processor> procs = new HashSet<Processor>();
+        Set<RPThread> procs = new HashSet<RPThread>();
 outer:  do {
             procs = collectProcessors(procs);
             if (procs.isEmpty()) {
                 return true;
             }
-            for (Processor p : procs) {
+            for (RPThread p : procs) {
                 long remaining = doneTime - System.currentTimeMillis();
                 if (remaining <= 0) {
                     result = collectProcessors(procs).isEmpty();
@@ -745,10 +745,10 @@ outer:  do {
         return result;
     }
 
-    private Set<Processor> collectProcessors (Set<Processor> procs) {
+    private Set<RPThread> collectProcessors (Set<RPThread> procs) {
         procs.clear();
         synchronized (processorLock) {
-            for (Processor p : processors) {
+            for (RPThread p : processors) {
                 if (p.belongsTo(this)) {
                     procs.add(p);
                 }
@@ -1047,8 +1047,8 @@ outer:  do {
      * @return a top level ThreadGroup. The method ensures that even Processors
      * created by internal execution will survive the end of the task.
      */
-    private static final TopLevelThreadGroup TOP_GROUP = new TopLevelThreadGroup();
-    private static final class TopLevelThreadGroup implements PrivilegedAction<ThreadGroup> {
+    static final TopLevelThreadGroup TOP_GROUP = new TopLevelThreadGroup();
+    static final class TopLevelThreadGroup implements PrivilegedAction<ThreadGroup> {
         public ThreadGroup getTopLevelThreadGroup() {
             ThreadGroup orig = java.security.AccessController.doPrivileged(this);
             ThreadGroup nuova = null;
@@ -1373,7 +1373,7 @@ outer:  do {
      * Cancellable since 4.1.
      */
     public final class Task extends org.openide.util.Task implements Cancellable {
-        private Item item;
+        Item item;
         private int priority = Thread.MIN_PRIORITY;
         private long time = 0;
         private Thread lastThread = null;
@@ -1514,7 +1514,7 @@ outer:  do {
                 if (item == null) {
                     success = false;
                 } else {
-                    Processor p = item.getProcessor();
+                    RPThread p = item.getProcessor();
                     success = item.clearOrNew(canBeNew);
 
                     if (p != null) {
@@ -1555,7 +1555,7 @@ outer:  do {
                 if (item == null) {
                     success = false;
                 } else {
-                    Processor p = item.getProcessor();
+                    RPThread p = item.getProcessor();
                     success = item.clear(null);
 
                     if (p != null) {
@@ -1647,7 +1647,7 @@ outer:  do {
                     if (loggable) {
                         em.fine("    ## running it synchronously"); // NOI18N
                     }
-                    Processor processor = (Processor)Thread.currentThread();
+                    RPThread processor = (RPThread)Thread.currentThread();
                     processor.doEvaluate (this, processorLock, RequestProcessor.this);
                 } else { // it is already running in other thread of this RP
                     if (loggable) {
@@ -1720,7 +1720,7 @@ outer:  do {
     }
 
     /* One item representing the task pending in the pending queue */
-    private static class Item extends Exception implements Comparable<Item> {
+    static class Item extends Exception implements Comparable<Item> {
         private static int counter;
         private final RequestProcessor owner;
         private final int cnt;
@@ -1753,7 +1753,7 @@ outer:  do {
         /** Annulate this request iff still possible.
          * @returns true if it was possible to skip this item, false
          * if the item was/is already processed */
-        boolean clear(Processor processor) {
+        boolean clear(RPThread processor) {
             boolean ret;
             synchronized (owner.processorLock) {
                 ret = enqueued ? owner.getQueue().remove(this) : true;
@@ -1767,10 +1767,10 @@ outer:  do {
             return false;
         }
 
-        final Processor getProcessor() {
+        final RPThread getProcessor() {
             Object a = action;
 
-            return (a instanceof Processor) ? (Processor) a : null;
+            return (a instanceof RPThread) ? (RPThread) a : null;
         }
 
         final int getPriority() {
@@ -1808,7 +1808,7 @@ outer:  do {
         }
         
         @Override
-        boolean clear(Processor processor) {
+        boolean clear(RPThread processor) {
             return false;
         }
 
@@ -1852,329 +1852,6 @@ outer:  do {
         }
     }
 
-    //------------------------------------------------------------------------------
-    // The Processor management implementation
-    //------------------------------------------------------------------------------
-
-    /**
-    /** A special thread that processes timouted Tasks from a RequestProcessor.
-     * It uses the RequestProcessor as a synchronized queue (a Channel),
-     * so it is possible to run more Processors in paralel for one RequestProcessor
-     */
-    private static class Processor extends Thread {
-        /** A stack containing all the inactive Processors */
-        private static final Stack<Processor> pool = new Stack<Processor>();
-
-        /* One minute of inactivity and the Thread will die if not assigned */
-        private static final int INACTIVE_TIMEOUT = Integer.getInteger("org.openide.util.RequestProcessor.inactiveTime", 60000); // NOI18N
-
-        /** Internal variable holding the Runnable to be run.
-         * Used for passing Runnable through Thread boundaries.
-         */
-
-        //private Item task;
-        private RequestProcessor source;
-
-        /** task we are working on */
-        private RequestProcessor.Task todo;
-        private boolean idle = true;
-
-        /** Waiting lock */
-        private final Object lock = new Object();
-        private RequestProcessor procesing;
-
-        public Processor() {
-            super(TOP_GROUP.getTopLevelThreadGroup(), "Inactive RequestProcessor thread"); // NOI18N
-            setDaemon(true);
-            assert !Thread.holdsLock(pool); // new Thread may lead to huge classloading
-        }
-
-        /** Provide an inactive Processor instance. It will return either
-         * existing inactive processor from the pool or will create a new instance
-         * if no instance is in the pool.
-         *
-         * @return inactive Processor
-         */
-        static Processor get() {
-            Processor newP = null;
-            for (;;) {
-                synchronized (pool) {
-                    if (pool.isEmpty()) {
-                        if (newP != null) {
-                            Processor proc = newP;
-                            proc.idle = false;
-                            proc.start();
-
-                            return proc;
-                        }
-                    } else {
-                        assert checkAccess(TOP_GROUP.getTopLevelThreadGroup());
-                        Processor proc = pool.pop();
-                        proc.idle = false;
-
-                        return proc;
-                    }
-                }
-                newP = new Processor();
-            }
-        }
-        private static boolean checkAccess(ThreadGroup g) throws SecurityException {
-            g.checkAccess();
-            return true;
-        }
-
-        /** A way of returning a Processor to the inactive pool.
-         *
-         * @param proc the Processor to return to the pool. It shall be inactive.
-         * @param last the debugging string identifying the last client.
-         */
-        static void put(Processor proc, String last) {
-            synchronized (pool) {
-                proc.setName("Inactive RequestProcessor thread [Was:" + proc.getName() + "/" + last + "]"); // NOI18N
-                proc.idle = true;
-                pool.push(proc);
-            }
-        }
-
-        /** setPriority wrapper that skips setting the same priority
-         * we'return already running at */
-        void setPrio(int priority) {
-            if (priority != getPriority()) {
-                setPriority(priority);
-            }
-        }
-
-        /**
-         * Sets an Item to be performed and notifies the performing Thread
-         * to start the processing.
-         *
-         * @param r the Item to run.
-         */
-        public void attachTo(RequestProcessor src) {
-            synchronized (lock) {
-                //assert(source == null);
-                source = src;
-                lock.notify();
-            }
-        }
-
-        boolean belongsTo(RequestProcessor r) {
-            synchronized (lock) {
-                return source == r;
-            }
-        }
-
-        /**
-         * The method that will repeatedly wait for a request and perform it.
-         */
-        @Override
-        public void run() {
-            for (;;) {
-                RequestProcessor current = null;
-
-                synchronized (lock) {
-                    try {
-                        if (source == null) {
-                            lock.wait(INACTIVE_TIMEOUT); // wait for the job
-                        }
-                    } catch (InterruptedException e) {
-                    }
-                     // not interesting
-
-                    current = source;
-                    source = null;
-
-                    if (current == null) { // We've timeouted
-
-                        synchronized (pool) {
-                            if (idle) { // and we're idle
-                                pool.remove(this);
-
-                                break; // exit the thread
-                            } else { // this will happen if we've been just
-
-                                continue; // before timeout when we were assigned
-                            }
-                        }
-                    }
-                }
-
-                String debug = null;
-
-                Logger em = logger();
-                boolean loggable = em.isLoggable(Level.FINE);
-
-                if (loggable) {
-                    try {
-                        procesing = current;
-                        em.log(Level.FINE, "Begining work {0}", getName()); // NOI18N
-                    } finally {
-                        procesing = null;
-                    }
-                }
-
-                // while we have something to do
-                for (;;) {
-                    Lookup[] lkp = new Lookup[1];
-                    // need the same sync as interruptTask
-                    synchronized (current.processorLock) {
-                        todo = current.askForWork(this, debug, lkp);
-                        if (todo == null) {
-                            break;
-                        }
-                    }
-                    setPrio(todo.getPriority());
-
-                    try {
-                        procesing = current;
-                        if (loggable) {
-                            em.log(Level.FINE, "  Executing {0}", todo); // NOI18N
-                        }
-                        registerParallel(todo, current);
-                        Lookups.executeWith(lkp[0], todo);
-                        lkp[0] = null;
-
-                        if (loggable) {
-                            em.log(Level.FINE, "  Execution finished in {0}", getName()); // NOI18N
-                        }
-
-                        debug = todo.debug();
-                    } catch (OutOfMemoryError oome) {
-                        // direct notification, there may be no room for
-                        // annotations and we need OOME to be processed
-                        // for debugging hooks
-                        em.log(Level.SEVERE, null, oome);
-                    } catch (StackOverflowError e) {
-                        // recoverable too
-                        doNotify(todo, e);
-                    } catch (ThreadDeath t) {
-                        // #201098: ignore
-                    } catch (Throwable t) {
-                        doNotify(todo, t);
-                    } finally {
-                        procesing = null;
-                        unregisterParallel(todo, current);
-                    }
-
-                    // need the same sync as interruptTask
-                    synchronized (current.processorLock) {
-                        // to improve GC
-                        todo = null;
-                        // and to clear any possible interrupted state
-                        // set by calling Task.cancel ()
-                        Thread.interrupted();
-                    }
-                }
-
-                if (loggable) {
-                    try {
-                        procesing = current;
-                        em.log(Level.FINE, "Work finished {0}", getName()); // NOI18N
-                    } finally {
-                        procesing = null;
-                    }
-                }
-            }
-        }
-        
-        /** Evaluates given task directly.
-         */
-        final void doEvaluate (Task t, Object processorLock, RequestProcessor src) {
-            Task previous = todo;
-            boolean interrupted = Thread.interrupted();
-            try {
-                todo = t;
-                t.run ();
-            } finally {
-                synchronized (processorLock) {
-                    todo = previous;
-                    if (interrupted || todo.item == null) {
-                        if (src.interruptThread) {
-                            // reinterrupt the thread if it was interrupted and
-                            // we support interrupts
-                            Thread.currentThread().interrupt();
-                        }
-                    }
-                }
-            }
-        }
-
-        /** Called under the processorLock */
-        public void interruptTask(Task t, RequestProcessor src) {
-            if (t != todo) {
-                // not running this task so
-                return;
-            }
-            
-            if (src.interruptThread) {
-                // otherwise interrupt this thread
-                interrupt();
-            }
-        }
-
-        boolean interrupt (Task t, RequestProcessor src) {
-            if (t != todo) {
-                return false;
-            }
-            interrupt();
-            return true;
-        }
-
-        /** See #20467. */
-        private static void doNotify(RequestProcessor.Task todo, Throwable ex) {
-            if (SLOW) {
-                Item item = todo.item;
-                if (item != null && item.message == null) {
-                    item.message = ex.toString();
-                    item.initCause(ex);
-                    ex = item;
-                }
-            }
-            logger().log(Level.SEVERE, "Error in RequestProcessor " + todo.debug(), ex);
-        }
-
-        private static final Map<Class<? extends Runnable>,Object> warnedClasses = Collections.synchronizedMap(
-            new WeakHashMap<Class<? extends Runnable>,Object>()
-        );
-        private void registerParallel(Task todo, RequestProcessor rp) {
-            if (rp.warnParallel == 0 || todo.run == null) {
-                return;
-            }
-            final Class<? extends Runnable> c = todo.run.getClass();
-            AtomicInteger number;
-            synchronized (rp.processorLock) {
-                if (rp.inParallel == null) {
-                    rp.inParallel = new WeakHashMap<Class<? extends Runnable>,AtomicInteger>();
-                }
-                number = rp.inParallel.get(c);
-                if (number == null) {
-                    rp.inParallel.put(c, number = new AtomicInteger(1));
-                } else {
-                    number.incrementAndGet();
-                }
-            }
-            if (number.get() >= rp.warnParallel && warnedClasses.put(c, "") == null) {
-                final String msg = "Too many " + c.getName() + " (" + number + ") in shared RequestProcessor; create your own"; // NOI18N
-                Exception ex = null;
-                Item itm = todo.item;
-                if (itm != null) {
-                    ex = new IllegalStateException(msg);
-                    ex.setStackTrace(itm.getStackTrace());
-                }
-                logger().log(Level.WARNING, msg, ex);
-            }
-        }
-
-        private void unregisterParallel(Task todo, RequestProcessor rp) {
-            if (rp.warnParallel == 0 || todo.run == null) {
-                return;
-            }
-            synchronized (rp.processorLock) {
-                Class<? extends Runnable> c = todo.run.getClass();
-                rp.inParallel.get(c).decrementAndGet();
-            }
-        }
-    }
     
     private static final class TickTac extends Thread implements Comparator<Item> {
         private static TickTac TICK;
