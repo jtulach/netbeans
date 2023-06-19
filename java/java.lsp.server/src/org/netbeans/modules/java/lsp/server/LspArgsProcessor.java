@@ -19,15 +19,20 @@
 package org.netbeans.modules.java.lsp.server;
 
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import org.netbeans.api.sendopts.CommandException;
 import org.netbeans.modules.java.lsp.server.debugging.Debugger;
 import org.netbeans.modules.java.lsp.server.protocol.Server;
+import org.netbeans.spi.lsp.DocumentSelectorRegistration;
 
 import org.netbeans.spi.sendopts.Arg;
 import org.netbeans.spi.sendopts.ArgsProcessor;
 import org.netbeans.spi.sendopts.Description;
 import org.netbeans.spi.sendopts.Env;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.util.NbBundle.Messages;
 
 public final class LspArgsProcessor implements ArgsProcessor {
@@ -41,6 +46,12 @@ public final class LspArgsProcessor implements ArgsProcessor {
     @Description(shortDescription="#DESC_StartJavaDebugAdapterServer")
     @Messages("DESC_StartJavaDebugAdapterServer=Starts the Java Debug Adapter Server")
     public String debugPort;
+
+    /** @see DocumentSelectorRegistration */
+    @Arg(longName="print-document-selectors")
+    @Description(shortDescription="#DESC_DocumentSelectors")
+    @Messages("DESC_DocumentSelectors=Print out available document selectors")
+    public boolean printSelectors;
 
     @Override
     public void process(Env env) throws CommandException {
@@ -74,6 +85,39 @@ public final class LspArgsProcessor implements ArgsProcessor {
             } catch (IOException ex) {
                 throw (CommandException) new CommandException(554).initCause(ex);
             }
+        }
+        if (printSelectors) {
+          StringBuilder sb = new StringBuilder("DocumentSelectors: [");
+          FileObject fo = FileUtil.getConfigFile("DocSel");
+          if (fo != null) {
+            String itemSep = "";
+            for (FileObject ch : fo.getChildren()) {
+              sb.append(itemSep);
+              itemSep = ", ";
+              String sep = "{";
+              Object l = ch.getAttribute("language");
+              Object p = ch.getAttribute("pattern");
+              if (l instanceof String) {
+                sb.append(sep);
+                sb.append("\"language\" : \"").append(l).append("\"");
+                sep = ", ";
+              }
+              if (l instanceof String) {
+                sb.append(sep);
+                sb.append("\"pattern\" : \"").append(p).append("\"");
+              }
+              if (!sep.equals("{")) {
+                sb.append("}");
+              }
+            }
+          }
+          sb.append("]\n");
+          try (PrintStream os = env.getOutputStream()) {
+            os.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            os.flush();
+          } catch (IOException ex) {
+            throw (CommandException) new CommandException(554).initCause(ex);
+          }
         }
     }
 }

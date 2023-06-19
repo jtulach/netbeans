@@ -58,6 +58,7 @@ import org.netbeans.modules.parsing.api.ResultIterator;
 import org.netbeans.modules.parsing.api.Source;
 import org.netbeans.modules.parsing.api.UserTask;
 import org.netbeans.modules.parsing.spi.ParseException;
+import org.netbeans.spi.lsp.DocumentSelectorRegistration;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
 import org.springframework.boot.configurationmetadata.ConfigurationMetadataGroup;
@@ -69,6 +70,7 @@ import org.springframework.boot.configurationmetadata.ConfigurationMetadataRepos
  *
  * @author Dusan Balek
  */
+@DocumentSelectorRegistration(language = "properties", pattern = "**/{application,bootstrap}*.properties")
 public final class MicronautConfigProperties {
 
     private static final String CONFIG_METADATA_JSON = "META-INF/spring-configuration-metadata.json";
