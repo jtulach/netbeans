@@ -219,15 +219,14 @@ public abstract class NbLaunchDelegate {
                 runContext.add(ioContext);
                 runContext.add(progress);
 
-                Lookup lookup;
-                if (singleMethod != null) {
-                    runContext.add(singleMethod);
-                }
                 if (selectConfiguration != null) {
                     runContext.add(selectConfiguration);
                 }
 
-                lookup = Lookups.fixed(runContext.toArray(new Object[runContext.size()]));
+                Lookup lookup = new ProxyLookup(
+                    createTargetLookup(prj, singleMethod, toRun),
+                    Lookups.fixed(runContext.toArray(new Object[runContext.size()]))
+                );
                 // the execution Lookup is fully populated now. If the Project supports Configurations,
                 // check if the action is actually enabled in the prescribed configuration. If it is not,
                 if (pcp != null) {
