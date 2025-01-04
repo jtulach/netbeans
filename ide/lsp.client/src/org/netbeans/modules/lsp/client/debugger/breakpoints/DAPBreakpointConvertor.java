@@ -28,7 +28,8 @@ public class DAPBreakpointConvertor implements BreakpointConvertor {
     @Override
     public void convert(Breakpoint b, ConvertedBreakpointConsumer breakpointConsumer) {
         if (b instanceof DAPLineBreakpoint lb) {
-            breakpointConsumer.lineBreakpoint("file://" + lb.getFilePath(), lb.getLineNumber(), lb.getCondition());
+            var uri = lb.getFileObject().toURI().toString();
+            breakpointConsumer.lineBreakpoint(uri, lb.getLineNumber(), lb.getCondition());
         }
     }
 

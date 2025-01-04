@@ -33,6 +33,7 @@ import org.netbeans.spi.viewmodel.NodeModel;
 import org.netbeans.spi.viewmodel.ModelListener;
 import org.netbeans.spi.viewmodel.UnknownTypeException;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 
 @DebuggerServiceRegistration(path="BreakpointsView", types={NodeModel.class})
 public final class BreakpointModel implements NodeModel {
@@ -64,12 +65,7 @@ public final class BreakpointModel implements NodeModel {
             DAPLineBreakpoint breakpoint = (DAPLineBreakpoint) node;
             String nameExt;
             FileObject fileObject = breakpoint.getFileObject();
-            if (fileObject != null) {
-                nameExt = fileObject.getNameExt();
-            } else {
-                File file = new File(breakpoint.getFilePath());
-                nameExt = file.getName();
-            }
+            nameExt = fileObject.getNameExt();
             return nameExt + ":" + breakpoint.getLineNumber();
         }
         throw new UnknownTypeException (node);
@@ -117,7 +113,7 @@ public final class BreakpointModel implements NodeModel {
     throws UnknownTypeException {
         if (node instanceof DAPLineBreakpoint) {
             DAPLineBreakpoint breakpoint = (DAPLineBreakpoint) node;
-            return breakpoint.getFilePath() + ":" + breakpoint.getLineNumber();
+            return FileUtil.getFileDisplayName(breakpoint.getFileObject()) + ":" + breakpoint.getLineNumber();
         }
         throw new UnknownTypeException (node);
     }

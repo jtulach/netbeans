@@ -44,7 +44,7 @@ import org.openide.util.WeakListeners;
 public final class DAPBreakpointActionProvider
 extends ActionsProviderSupport implements PropertyChangeListener {
 
-    private static final Set ACTIONS = Collections.singleton (
+    private static final Set<Object> ACTIONS = Collections.singleton (
         ActionsManager.ACTION_TOGGLE_BREAKPOINT
     );
 

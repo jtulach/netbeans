@@ -54,23 +54,19 @@ public final class DAPLineBreakpoint extends Breakpoint {
 
     private final AtomicBoolean enabled = new AtomicBoolean(true);
     private final AtomicBoolean hidden = new AtomicBoolean(false);
-    @NullAllowed
     private final FileObject fileObject; // The user file that contains the breakpoint
-    private final String filePath; // Path of the file to which MI breakpoint is submitted
     private final int lineNumber; // The breakpoint line number
     private volatile String condition;
 
-    private DAPLineBreakpoint (FileObject fileObject, String filePath, int lineNumber) {
-        this.fileObject = fileObject;
-        this.filePath = filePath;
+    private DAPLineBreakpoint (FileObject fileObject, int lineNumber) {
+        this.fileObject = Objects.requireNonNull(fileObject);
         this.lineNumber = lineNumber;
     }
 
     public static DAPLineBreakpoint create(Line line) {
         int lineNumber = line.getLineNumber() + 1;
         FileObject fileObject = line.getLookup().lookup(FileObject.class);
-        String filePath = FileUtil.toFile(fileObject).getAbsolutePath();
-        return new DAPLineBreakpoint(fileObject, filePath, lineNumber);
+        return new DAPLineBreakpoint(fileObject, lineNumber);
     }
 
     /**
@@ -80,25 +76,7 @@ public final class DAPLineBreakpoint extends Breakpoint {
      * @return a new breakpoint.
      */
     public static DAPLineBreakpoint create(FileObject fileObject, int lineNumber) {
-        String filePath = FileUtil.toFile(fileObject).getAbsolutePath();
-        return new DAPLineBreakpoint(fileObject, filePath, lineNumber);
-    }
-
-    /**
-     * Create a new CPP lite breakpoint, that is not associated with a user file.
-     * @param filePath the file path of the breakpoint in the debuggee
-     * @param lineNumber 1-based line number
-     * @return a new breakpoint.
-     */
-    public static DAPLineBreakpoint create(String filePath, int lineNumber) {
-        return new DAPLineBreakpoint(null, filePath, lineNumber);
-    }
-
-    /**
-     * Get the file path of the breakpoint in the debuggee.
-     */
-    public String getFilePath() {
-        return filePath;
+        return new DAPLineBreakpoint(fileObject, lineNumber);
     }
 
     /**
@@ -108,7 +86,6 @@ public final class DAPLineBreakpoint extends Breakpoint {
         return lineNumber;
     }
 
-    @CheckForNull
     public FileObject getFileObject() {
         return fileObject;
     }
@@ -234,7 +211,7 @@ public final class DAPLineBreakpoint extends Breakpoint {
         }
 
         private FileObject getFile() {
-            return FileUtil.toFileObject(new File(filePath));
+            return fileObject;
         }
 
         @Override

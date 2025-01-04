@@ -18,10 +18,12 @@
  */
 package org.netbeans.modules.lsp.client.debugger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import org.netbeans.modules.lsp.client.debugger.api.DAPConfiguration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +91,7 @@ import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.RequestProcessor;
 import org.netbeans.modules.lsp.client.debugger.spi.BreakpointConvertor.ConvertedBreakpointConsumer;
+import org.openide.util.Utilities;
 
 public final class DAPDebugger implements IDebugProtocolClient {
     public static final String ENGINE_TYPE_ID = "DAPDebuggerEngine";
@@ -556,21 +559,25 @@ public final class DAPDebugger implements IDebugProtocolClient {
 
     private static final URLPathConvertor DEFAULT_CONVERTOR = new URLPathConvertor() {
         @Override
-        public String toPath(String file) {
-            if (file.startsWith("file:")) {
-                return URI.create(file).getPath();
+        public String toPath(String url) {
+            try {
+                return Utilities.toFile(new URI(url)).getPath();
+            } catch (IllegalArgumentException | URISyntaxException ex) {
+                LOG.log(Level.FINE, "Cannot convert " + url + " URL to path", ex);
+                return null;
             }
-
-            return null;
         }
 
         @Override
         public String toURL(String path) {
-            return "file:" + path;
+            return Utilities.toURI(new File(path)).toString();
         }
     };
 
-    public interface URLPathConvertor {
+    /**
+     * Converts URL to local file system paths and back.
+     */
+    interface URLPathConvertor {
         public String toPath(String url);
         public String toURL(String path);
     }
