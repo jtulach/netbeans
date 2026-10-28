@@ -66,17 +66,23 @@ import org.openide.util.Utilities;
  */
 public class ProjectChooserAccessory extends javax.swing.JPanel
     implements ActionListener, PropertyChangeListener {
+    private final OpenProjectListSettings opls;
 
     private RequestProcessor.Task updateSubprojectsTask;
     private RequestProcessor.Task displayNameTask;
     private RequestProcessor RP;
     private RequestProcessor RP2;
-    
+
     ModelUpdater modelUpdater;  //#101227 -> non-private
 
     private Map<Project,Set<? extends Project>> subprojectsCache = new HashMap<Project,Set<? extends Project>>(); // #59098
     /** Creates new form ProjectChooserAccessory */
-    public ProjectChooserAccessory(JFileChooser chooser, boolean isOpenSubprojects, boolean trustAndPrime) {
+    public ProjectChooserAccessory(
+        JFileChooser chooser,
+        OpenProjectListSettings opls
+    ) {
+        this.opls = opls;
+
         initComponents();
 
         modelUpdater = new ModelUpdater();
@@ -87,11 +93,14 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
         updateSubprojectsTask.setPriority( Thread.MIN_PRIORITY );
 
         // Listen on the subproject checkbox to change the option accordingly
-        jCheckBoxSubprojects.setSelected( isOpenSubprojects );
+        jCheckBoxSubprojects.setSelected( opls.isOpenSubprojects() );
         jCheckBoxSubprojects.addActionListener( this );
 
-        jCheckBoxPrime.setSelected(trustAndPrime);
+        jCheckBoxPrime.setSelected(opls.isTrustAndPrime());
         jCheckBoxPrime.addActionListener(this);
+
+        jCheckBoxOnlyRecognized.setSelected(opls.isOnlyRecognized());
+        jCheckBoxOnlyRecognized.addActionListener(this);
 
         // Listen on the chooser to update the Accessory
         chooser.addPropertyChangeListener( this );
@@ -116,6 +125,7 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
         jLabelProjectName = new javax.swing.JLabel();
         jTextFieldProjectName = new javax.swing.JTextField();
         jCheckBoxPrime = new javax.swing.JCheckBox();
+        jCheckBoxOnlyRecognized = new javax.swing.JCheckBox();
         jCheckBoxSubprojects = new javax.swing.JCheckBox();
         jScrollPaneSubprojects = new javax.swing.JScrollPane();
         jListSubprojects = new javax.swing.JList();
@@ -144,14 +154,35 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
         org.openide.awt.Mnemonics.setLocalizedText(jCheckBoxPrime, org.openide.util.NbBundle.getMessage(ProjectChooserAccessory.class, "LBL_PrjChooser_Prime_CheckBox")); // NOI18N
         jCheckBoxPrime.setToolTipText(org.openide.util.NbBundle.getMessage(ProjectChooserAccessory.class, "LBL_PrjChooser_Prime_CheckBoxTooltipText")); // NOI18N
         jCheckBoxPrime.setMargin(new java.awt.Insets(2, 0, 2, 2));
+        jCheckBoxPrime.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxPrimeActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(0, 0, 2, 0);
         add(jCheckBoxPrime, gridBagConstraints);
 
+        org.openide.awt.Mnemonics.setLocalizedText(jCheckBoxOnlyRecognized, "Only &Recognized Projects");
+        jCheckBoxOnlyRecognized.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxOnlyRecognizedActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        add(jCheckBoxOnlyRecognized, gridBagConstraints);
+
         org.openide.awt.Mnemonics.setLocalizedText(jCheckBoxSubprojects, org.openide.util.NbBundle.getMessage(ProjectChooserAccessory.class, "LBL_PrjChooser_Subprojects_CheckBox")); // NOI18N
         jCheckBoxSubprojects.setMargin(new java.awt.Insets(2, 0, 2, 2));
+        jCheckBoxSubprojects.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxSubprojectsActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridwidth = java.awt.GridBagConstraints.REMAINDER;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
@@ -174,8 +205,21 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
         add(jScrollPaneSubprojects, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
+    private void jCheckBoxPrimeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxPrimeActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jCheckBoxPrimeActionPerformed
+
+    private void jCheckBoxSubprojectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxSubprojectsActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jCheckBoxSubprojectsActionPerformed
+
+    private void jCheckBoxOnlyRecognizedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxOnlyRecognizedActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jCheckBoxOnlyRecognizedActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBox jCheckBoxOnlyRecognized;
     private javax.swing.JCheckBox jCheckBoxPrime;
     private javax.swing.JCheckBox jCheckBoxSubprojects;
     private javax.swing.JLabel jLabelProjectName;
@@ -189,10 +233,13 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
     @Override
     public void actionPerformed( ActionEvent e ) {
         if ( e.getSource() == jCheckBoxSubprojects ) {
-            OpenProjectListSettings.getInstance().setOpenSubprojects( jCheckBoxSubprojects.isSelected() );
+            opls.setOpenSubprojects( jCheckBoxSubprojects.isSelected() );
         }
         if (e.getSource() == jCheckBoxPrime) {
-            OpenProjectListSettings.getInstance().setTrustAndPrime(jCheckBoxPrime.isSelected());
+            opls.setTrustAndPrime(jCheckBoxPrime.isSelected());
+        }
+        if (e.getSource() == jCheckBoxOnlyRecognized) {
+            opls.setOnlyRecognized(jCheckBoxOnlyRecognized.isSelected());
         }
     }
 
@@ -233,7 +280,7 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
                     if (Thread.interrupted()) {
                         return;
                     }
-                    Project project = getProject(FileUtil.normalizeFile(dir));
+                    Project project = getProject(FileUtil.normalizeFile(dir), opls.isOnlyRecognized());
                     if ( project != null ) {
                         projects.add( project );
                         projectNames.add(ProjectUtils.getInformation(project).getDisplayName());
@@ -359,8 +406,8 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
         return cnt;
     }
 
-    private static Project getProject( File dir ) {
-        return OpenProjectList.fileToProject( dir );
+    private static Project getProject(File dir, boolean onlyRecognized) {
+        return OpenProjectList.fileToProject(dir, onlyRecognized);
     }
 
     private static ProjectManager.Result getProjectResult(File dir) {
@@ -439,7 +486,7 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
         ProjectManager.getDefault().clearNonProjectCache(); // #41882
 
         OpenProjectListSettings opls = OpenProjectListSettings.getInstance();
-        JFileChooser chooser = new ProjectFileChooser();
+        ProjectFileChooser chooser = new ProjectFileChooser(opls);
         chooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
 
         if ("GTK".equals(javax.swing.UIManager.getLookAndFeel().getID())) { // NOI18N
@@ -463,7 +510,10 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
 
 
         if ( defaultAccessory ) {
-            chooser.setAccessory(new ProjectChooserAccessory(chooser, opls.isOpenSubprojects(), opls.isTrustAndPrime()));
+            chooser.setAccessory(new ProjectChooserAccessory(
+                chooser,
+                opls
+            ));
         }
 
         File currDir = null;
@@ -505,10 +555,12 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
     // Aditional innerclasses for the file chooser -----------------------------
 
     private static class ProjectFileChooser extends JFileChooser {
+        final OpenProjectListSettings opls;
 
         @SuppressWarnings("LeakingThisInConstructor")
-        public ProjectFileChooser() {
-            OpenProjectListSettings.getInstance().restoreComponentSize(this);
+        public ProjectFileChooser(OpenProjectListSettings opls) {
+            this.opls = opls;
+            opls.restoreComponentSize(this);
         }
 
         @Override
@@ -517,18 +569,20 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
             if (selectedFile != null) {
                 File dir = FileUtil.normalizeFile(selectedFile);
                 FileObject fo = FileUtil.toFileObject(dir);
-                if (fo != null && fo.isFolder() && ProjectManager.getDefault().isProject(fo)) {
-                    super.approveSelection();
+                if (fo != null && fo.isFolder()) {
+                    boolean isPrj = ProjectManager.getDefault().isProject(fo);
+                    if (isPrj || !opls.isOnlyRecognized()) {
+                        super.approveSelection();
+                    }
+                    return;
                 }
-                else {
-                    setCurrentDirectory( dir );
-                }
+                setCurrentDirectory(dir);
             }
         }
 
         @Override
         public void removeNotify() {
-            OpenProjectListSettings.getInstance().storeComponentSize(this);
+            opls.storeComponentSize(this);
             super.removeNotify();
         }
 
@@ -561,12 +615,12 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
 
     private static class ProjectFileView extends FileView implements Runnable {
 
-        private final JFileChooser chooser;
+        private final ProjectFileChooser chooser;
         private final Map<File,Icon> knownProjectIcons = new HashMap<File,Icon>();
         private final RequestProcessor.Task task = Hacks.RP.create(this);
         private File lookingForIcon;
 
-        public ProjectFileView(JFileChooser chooser) {
+        ProjectFileView(ProjectFileChooser chooser) {
             this.chooser = chooser;
             chooser.setFileView(this);
             task.setPriority(Thread.MIN_PRIORITY);
@@ -584,7 +638,7 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
                     return icon;
                 }
             }
-            if ( 
+            if (
                    !f.toString().matches("/[^/]+") && // Unix: /net, /proc, etc.
                     f.getParentFile() != null) { // #173958: do not call ProjectManager.isProject now, could block
                 synchronized (this) {
@@ -621,7 +675,7 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
             if (r != null) {
                 icon = r.getIcon();
                 if (icon == null) {
-                    Project p = getProject(d);
+                    Project p = getProject(d, chooser.opls.isOnlyRecognized());
                     if (p != null) {
                         icon = ProjectUtils.getInformation(p).getIcon();
                     } else {
@@ -751,7 +805,7 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
             }
 
         }
-        
+
         /** Gets all subprojects recursively
          */
         void addSubprojects(Project p, List<Project> result, Map<Project,Set<? extends Project>> cache) {
@@ -778,7 +832,7 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
                             return;
                         }
                         subprojects = spp.getSubprojects();
-                        
+
                     } else {
                         subprojects = Collections.emptySet();
                     }
@@ -800,7 +854,7 @@ public class ProjectChooserAccessory extends javax.swing.JPanel
             }
 
         }
-        
+
 
         @Override
         public boolean cancel() {

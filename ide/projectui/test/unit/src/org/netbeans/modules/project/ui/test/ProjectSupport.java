@@ -47,7 +47,7 @@ public class ProjectSupport {
         final ProjectListListener listener = new ProjectListListener();
         try {
             // open project
-            final Project project = OpenProjectList.fileToProject(projectDir);
+            final Project project = OpenProjectList.fileToProject(projectDir, false);
             if(project == null) {
                 ErrorManager.getDefault().log(ErrorManager.USER, "Project not found: "+projectDir);
                 return null;
@@ -104,7 +104,7 @@ public class ProjectSupport {
             OpenProjectList.getDefault().removePropertyChangeListener(listener);
         }
     }
-    
+
     /** Closes project with system or display name equals to given name.
      * It also closes all files open in editor. If a file is modified, all
      * changes are discarded.
@@ -161,13 +161,13 @@ public class ProjectSupport {
         // project not found
         return false;
     }
-    
+
     /** Discards all changes in modified files of given project. */
     private static void discardChanges(Project project) {
         // discard all changes in modified files
-        Iterator iter = DataObject.getRegistry().getModifiedSet().iterator();
+        Iterator<DataObject> iter = DataObject.getRegistry().getModifiedSet().iterator();
         while (iter.hasNext()) {
-            DataObject dobj = (DataObject) iter.next();
+            DataObject dobj = iter.next();
             if (dobj != null) {
                 FileObject fobj = dobj.getPrimaryFile();
                 Project owner = FileOwnerQuery.getOwner(fobj);
@@ -177,7 +177,7 @@ public class ProjectSupport {
             }
         }
     }
-    
+
     /** Opens project on specified path.
      * @param projectPath path to a directory with project to open
      * @return Project instance of opened project
@@ -185,11 +185,11 @@ public class ProjectSupport {
     public static Object openProject(String projectPath) {
         return openProject(new File(projectPath));
     }
-    
+
     /** Listener for project open. */
     static class ProjectListListener implements PropertyChangeListener {
         public volatile boolean projectListChanged = false;
-        
+
         /** Listen for property which changes when project is hopefully opened. */
         @Override
         public void propertyChange(PropertyChangeEvent evt) {

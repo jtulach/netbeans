@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URL;
-import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1268,13 +1267,20 @@ public final class OpenProjectList {
     }
         
     // Used from OpenProjectAction
-    public static Project fileToProject( File projectDir ) {
+    public static Project fileToProject(File projectDir, boolean onlyRecognized) {
         
         try {
             
             FileObject fo = FileUtil.toFileObject(projectDir);
             if (fo != null && /* #60518 */ fo.isFolder()) {
-                return ProjectManager.getDefault().findProject(fo);
+                Project prj = ProjectManager.getDefault().findProject(fo);
+                if (prj != null || onlyRecognized) {
+                    return prj;
+                } else {
+                    FileObject marker = fo.createData(".nbgp");
+                    ProjectManager.getDefault().clearNonProjectCache();
+                    return ProjectManager.getDefault().findProject(marker.getParent());
+                }
             } else {
                 return null;
             }
