@@ -68,6 +68,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.security.auth.Refreshable;
+import jdk.jshell.JShell;
 import org.netbeans.api.debugger.DebuggerEngine;
 import org.netbeans.api.debugger.DebuggerInfo;
 import org.netbeans.api.debugger.DebuggerManager;
@@ -128,6 +129,7 @@ import org.netbeans.modules.debugger.jpda.models.JPDAThreadImpl;
 import org.netbeans.modules.debugger.jpda.models.ObjectTranslation;
 import org.netbeans.modules.debugger.jpda.models.ThreadsCache;
 import org.netbeans.modules.debugger.jpda.models.VariableMirrorTranslator;
+import org.netbeans.modules.debugger.jpda.spi.OpenJShellProvider;
 import org.netbeans.modules.debugger.jpda.util.JPDAUtils;
 import org.netbeans.modules.debugger.jpda.util.Operator;
 import org.netbeans.spi.debugger.ContextProvider;
@@ -1330,6 +1332,14 @@ public class JPDADebuggerImpl extends JPDADebugger {
             } catch (InternalExceptionWrapper e) {
             } finally {
                 accessLock.writeLock().unlock();
+            }
+            try {
+                JShell shell = JdiJShell.open(vm);
+                for (OpenJShellProvider p : Lookup.getDefault().lookupAll(OpenJShellProvider.class)) {
+                    p.open(shell);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
 
